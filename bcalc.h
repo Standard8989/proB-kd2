@@ -246,7 +246,7 @@ long double eval_constant(StringSeek *seek) {
     int len;
     StringSeek copy = *seek;
     unsigned long long integer_part = eval_natural_with_len(seek, &len);
-    if(integer_part / (unsigned long long)mypow(10, len - 1) == 0) {
+    if(integer_part / (unsigned long long)mypow(10, len - 1) == 0 && (len != 1 || integer_part != 0)) {
         print_syntax_error(&copy);
     }
     if (seek->seek == seek->size) {
