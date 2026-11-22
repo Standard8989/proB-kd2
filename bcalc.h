@@ -70,7 +70,12 @@ long long eval_natural_with_len(StringSeek *seek, int *len);
 // // 階乗だけ別処理
 // long double eval_pow(StringSeek *seek, long double top);
 
-long long mypow(long long base, long long top);
+long double mypow(long double base, long long top);
+
+void error_output(StringSeek *seek) {
+    if((seek->seek + 1))
+    fprintf(stdout, "Syntax error occurs at the %s character.\n", )
+}
 
 //
 // 実装
@@ -106,7 +111,7 @@ String input_string() {
 
     int ch;
     int i = 0;
-    while ((ch = getchar()) != '\n') {
+    while ((ch = getchar()) != '\n' && ch != EOF) {
         string.data[i++] = (char)ch;
         string.size++;
 
@@ -207,13 +212,15 @@ long double eval_term(StringSeek *seek) {
         return value;
     }
 
+comeon:
     switch (getseek(seek)) {
     case '^':
         seek->seek--;
 
         long double next_value = eval_factor(seek);
 
-        return mypow(next_value, value);
+        value = mypow(next_value, value);
+        goto comeon;
 
     case '*':
         seek->seek--;
@@ -260,6 +267,13 @@ long double eval_constant(StringSeek *seek) {
 
     int len;
     long double decimal_part = (long double)eval_natural_with_len(seek, &len);
+    if(seek->seek == -1) {
+        return decimal_part;
+    }
+    else if(seek->seek < -1) {
+        // エラー
+    }
+
     if (getseek(seek) == '.') {
         // 実数の場合
         seek->seek--;
@@ -321,7 +335,7 @@ long long eval_natural_with_len(StringSeek *seek, int *len) {
 //     return top;
 // }
 
-long long mypow(long long base, long long top) {
+long double mypow(long double base, long long top) {
     if (top == 0) {
         return 1;
     }
@@ -329,7 +343,7 @@ long long mypow(long long base, long long top) {
         return base;
     }
     else {
-        long long tmp = mypow(base, top / 2);
+        long double tmp = mypow(base, top / 2);
         return tmp * tmp * ((top % 2 == 1) ? base : 1);
     }
 }
