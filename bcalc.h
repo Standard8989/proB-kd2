@@ -59,7 +59,7 @@ long double eval_constant(StringSeek *seek);
 unsigned long long eval_natural(StringSeek *seek);
 unsigned long long eval_natural_with_len(StringSeek *seek, int *len);
 
-unsigned long long mypow(unsigned long long base, unsigned long long top);
+long double mypow(long double base, unsigned long long top);
 
 //
 // 実装
@@ -132,48 +132,63 @@ long double bcalc(String string) {
 long double eval_expression(StringSeek *seek) {
     long double value = eval_term(seek);
 
-    if (seek->seek == seek->size) {
-        return value;
+    while (true) {
+        // チェック
+
+        char op = getseek(seek);
+
+        // チェック
+
+        long double next = eval_term(seek);
+
+        switch (op) {
+        case '+':
+            value += next;
+            break;
+
+        case '-':
+            value -= next;
+            break;
+
+        default:
+            // エラー
+        }
     }
-    else if (getseek(seek) == '+') {
-        seek->seek++;
-        return value + eval_expression(seek);
-    }
-    else if (getseek(seek) == '-') {
-        seek->seek++;
-        return value - eval_expression(seek);
-    }
-    else {
-        return value;
-    }
+
+    return value;
 }
 
 long double eval_term(StringSeek *seek) {
     long double value = eval_factor(seek);
-    if (seek->seek == seek->size) {
-        return value;
+
+    while (true) {
+        // チェック
+
+        char op = getseek(seek);
+
+        // チェック
+
+        long double next = eval_factor(seek);
+
+        switch (op) {
+        case '*':
+            value += next;
+            break;
+
+        case '/':
+            value -= next;
+            break;
+
+        case '^':
+            value = mypow(value, next);
+            return value;
+
+        default:
+            // エラー
+        }
     }
 
-    switch (getseek(seek)) {
-    case '^':
-        seek->seek++;
-
-        long double next_value = eval_factor(seek);
-        return mypow(value, next_value);
-
-    case '*':
-        seek->seek++;
-
-        return value * eval_term(seek);
-
-    case '/':
-        seek->seek++;
-
-        return value / eval_term(seek);
-
-    default:
-        return value;
-    }
+    return value;
 }
 
 long double eval_factor(StringSeek *seek) {
@@ -207,7 +222,7 @@ long double eval_constant(StringSeek *seek) {
         seek->seek++;
         int len;
         long double decimal_part = (long double)eval_natural_with_len(seek, &len);
-        decimal_part /= 10 * len;
+        decimal_part /= mypow(10, len);
 
         return integer_part + decimal_part;
     }
@@ -252,12 +267,12 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     return val;
 }
 
-unsigned long long mypow(unsigned long long base, unsigned long long top) {
-    if(top == 1) {
+long double mypow(long double base, unsigned long long top) {
+    if (top == 1) {
         return base;
     }
     else {
-        unsigned long long tmp = mypow(base, top / 2);
+        long double tmp = mypow(base, top / 2);
         return tmp * tmp * ((top % 2 == 1) ? base : 1);
     }
 }
