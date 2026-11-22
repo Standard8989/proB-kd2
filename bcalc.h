@@ -29,6 +29,8 @@ void output_string(FILE *stream, String string);
 StringSeek construct_string_seek(String string);
 char getseek(StringSeek *seek);
 
+void print_syntax_error(StringSeek *seek);
+
 //
 // bcalc部分
 //
@@ -58,6 +60,8 @@ long double eval_constant(StringSeek *seek);
 // 自然数を評価
 unsigned long long eval_natural(StringSeek *seek);
 unsigned long long eval_natural_with_len(StringSeek *seek, int *len);
+
+long double eval_power(StringSeek *seek);
 
 long double mypow(long double base, unsigned long long top);
 
@@ -95,7 +99,7 @@ String input_string() {
 
     int ch;
     size_t i = 0;
-    while ((ch = getchar()) != '\n') {
+    while ((ch = getchar()) != '\n' && ch != EOF) {
         string.data[i++] = (char)ch;
         string.size++;
 
@@ -157,7 +161,7 @@ long double eval_expression(StringSeek *seek) {
             break;
 
         default:
-            // エラー
+            print_syntax_error(seek);
         }
     }
 
@@ -165,7 +169,7 @@ long double eval_expression(StringSeek *seek) {
 }
 
 long double eval_term(StringSeek *seek) {
-    long double value = eval_factor(seek);
+    long double value = eval_power(seek);
 
     while (true) {
         // チェック
@@ -176,12 +180,12 @@ long double eval_term(StringSeek *seek) {
         char op = getseek(seek);
 
         // チェック
-        if (!(op == '*' || op == '/' || op == '^')) {
+        if (!(op == '*' || op == '/')) {
             break;
         }
         seek->seek++;
 
-        long double next = eval_factor(seek);
+        long double next = eval_power(seek);
 
         switch (op) {
         case '*':
@@ -192,12 +196,8 @@ long double eval_term(StringSeek *seek) {
             value /= next;
             break;
 
-        case '^':
-            value = mypow(value, next);
-            return value;
-
         default:
-            // エラー
+            print_syntax_error(seek);
         }
     }
 
@@ -205,12 +205,16 @@ long double eval_term(StringSeek *seek) {
 }
 
 long double eval_factor(StringSeek *seek) {
+    if(seek->seek == seek->size) {
+        print_syntax_error(seek);
+    }
+
     if (getseek(seek) == '(') {
         seek->seek++;
         long double value = eval_expression(seek);
 
-        if (getseek(seek) != ')') {
-            // エラー
+        if (seek->seek == seek->size || getseek(seek) != ')') {
+            print_syntax_error(seek);
         }
         seek->seek++;
 
@@ -220,16 +224,20 @@ long double eval_factor(StringSeek *seek) {
         return eval_constant(seek);
     }
     else {
-        // エラー
+        print_syntax_error(seek);
     }
 }
 
 long double eval_constant(StringSeek *seek) {
     if (seek->seek == seek->size) {
-        // エラー
+        print_syntax_error(seek);
     }
 
     unsigned long long integer_part = eval_natural(seek);
+    if(seek->seek == seek->size) {
+        return integer_part;
+    }
+
     if (getseek(seek) == '.') {
         // 実数の場合
         seek->seek++;
@@ -245,28 +253,16 @@ long double eval_constant(StringSeek *seek) {
 }
 
 unsigned long long eval_natural(StringSeek *seek) {
-    unsigned long long val = 0;
-    char temp;
-    if (!isdigit((unsigned char)getseek(seek))) {
-        // エラー
-    }
-
-    while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
-        val *= 10;
-        val += temp - '0';
-
-        seek->seek++;
-    }
-
-    return val;
+    int len;
+    return eval_natural_with_len(seek, &len);
 }
 
 unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     unsigned long long val = 0;
     char temp;
     *len = 0;
-    if (!isdigit((unsigned char)getseek(seek))) {
-        // エラー
+    if (seek->seek == seek->size || !isdigit((unsigned char)getseek(seek))) {
+        print_syntax_error(seek);
     }
 
     while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
@@ -280,14 +276,56 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     return val;
 }
 
+long double eval_power(StringSeek *seek) {
+    long double value = eval_factor(seek);
+    if(seek->seek == seek->size) {
+        return value;
+    }
+
+    if(getseek(seek) == '^') {
+        seek->seek++;
+        return mypow(value, eval_factor(seek));
+    }
+    else {
+        return value;
+    }
+}
+
 long double mypow(long double base, unsigned long long top) {
-    if (top == 1) {
+    if(top == 0) {
+        return 1;
+    }
+    else if (top == 1) {
         return base;
     }
     else {
         long double tmp = mypow(base, top / 2);
         return tmp * tmp * ((top % 2 == 1) ? base : 1);
     }
+}
+
+void print_syntax_error(StringSeek *seek) {
+    long n = seek->seek + 1;
+    char *str = "th";
+
+    if (n % 100 < 11 || n % 100 > 13) {
+        switch (n % 10) {
+        case 1:
+            str = "st";
+            break;
+        case 2:
+            str = "nd";
+            break;
+        case 3:
+            str = "rd";
+            break;
+        default:
+            break;
+        }
+    }
+
+    fprintf(stdout, "Syntax error occurs at the %ld%s character.\n", n, str);
+    exit(1);
 }
 
 #endif
