@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 
     printf("value: %Lf\n", value);
 
-    free_string(&string);
+    destruct_string(&string);
 
     return 0;
 }

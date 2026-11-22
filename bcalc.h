@@ -22,12 +22,19 @@ typedef struct String String;
 typedef struct StringSeek StringSeek;
 
 String construct_string(int size);
-void free_string(String *string);
+void destruct_string(String *string);
 String input_string();
 void output_string(FILE *stream, String string);
 
 StringSeek construct_string_seek(String string);
 char getseek(StringSeek *seek);
+
+// long doubleのVector
+typedef struct ldVec ldVec;
+
+ldVec construct_ldVec(int size);
+void destruct_ldVec(ldVec *vec);
+void pushback_ldVec(ldVec *vec, long double value);
 
 //
 // bcalc部分
@@ -59,6 +66,9 @@ long double eval_constant(StringSeek *seek);
 long long eval_natural(StringSeek *seek);
 long long eval_natural_with_len(StringSeek *seek, int *len);
 
+// 階乗だけ別処理
+long double eval_pow(StringSeek *seek);
+
 long long mypow(long long base, long long top);
 
 //
@@ -83,7 +93,7 @@ String construct_string(int size) {
     return string;
 }
 
-void free_string(String *string) {
+void destruct_string(String *string) {
     free(string->data);
     string->data = NULL;
     string->size = 0;
@@ -118,6 +128,36 @@ StringSeek construct_string_seek(String string) {
     StringSeek string_seek = {string.data, string.size, string.size - 1};
 
     return string_seek;
+}
+
+struct ldVec {
+    long double *data;
+    int size;
+    int capacity;
+};
+
+ldVec construct_ldVec(int size) {
+    ldVec vec = {(long double *)calloc(size, sizeof(long double)), size, size};
+
+    return vec;
+}
+
+void destruct_ldVec(ldVec *vec) {
+    free(vec->data);
+
+    vec->data = NULL;
+    vec->size = 0;
+    vec->capacity = 0;
+}
+
+void pushback_ldVec(ldVec *vec, long double value) {
+    if (vec->capacity == vec->size) {
+        vec->data = (long double *)realloc(vec->data, vec->capacity * 2);
+        vec->capacity *= 2;
+    }
+
+    vec->data[vec->size] = value;
+    vec->size++;
 }
 
 char getseek(StringSeek *seek) {
@@ -171,7 +211,7 @@ long double eval_term(StringSeek *seek) {
         seek->seek--;
 
         long double next_value = eval_factor(seek);
-        
+
         return mypow(next_value, value);
 
     case '*':
@@ -256,6 +296,10 @@ long long eval_natural_with_len(StringSeek *seek, int *len) {
     }
 
     return val;
+}
+
+long double eval_pow(StringSeek *seek) {
+    
 }
 
 long long mypow(long long base, long long top) {
