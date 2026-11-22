@@ -56,10 +56,10 @@ long double eval_factor(StringSeek *seek);
 long double eval_constant(StringSeek *seek);
 
 // 自然数を評価
-unsigned long long eval_natural(StringSeek *seek);
-unsigned long long eval_natural_with_len(StringSeek *seek, int *len);
+long long eval_natural(StringSeek *seek);
+long long eval_natural_with_len(StringSeek *seek, int *len);
 
-unsigned long long mypow(unsigned long long base, unsigned long long top);
+long long mypow(long long base, long long top);
 
 //
 // 実装
@@ -130,15 +130,15 @@ long double bcalc(String string) {
 }
 
 long double eval_expression(StringSeek *seek) {
-    if(seek->seek < -1) {
+    if (seek->seek < -1) {
         // エラー
     }
-    else if(seek->seek == -1) {
+    else if (seek->seek == -1) {
         return 0;
     }
     long double value = eval_term(seek);
 
-    if(seek->seek < -1) {
+    if (seek->seek < -1) {
         // エラー
     }
     else if (seek->seek == -1) {
@@ -159,7 +159,7 @@ long double eval_expression(StringSeek *seek) {
 
 long double eval_term(StringSeek *seek) {
     long double value = eval_factor(seek);
-    if(seek->seek < -1) {
+    if (seek->seek < -1) {
         // エラー
     }
     if (seek->seek == -1) {
@@ -171,6 +171,7 @@ long double eval_term(StringSeek *seek) {
         seek->seek--;
 
         long double next_value = eval_factor(seek);
+        
         return mypow(next_value, value);
 
     case '*':
@@ -188,7 +189,7 @@ long double eval_term(StringSeek *seek) {
 }
 
 long double eval_factor(StringSeek *seek) {
-    if(seek->seek < 0) {
+    if (seek->seek < 0) {
         // エラー
     }
 
@@ -231,16 +232,16 @@ long double eval_constant(StringSeek *seek) {
     }
 }
 
-unsigned long long eval_natural(StringSeek *seek) {
+long long eval_natural(StringSeek *seek) {
     int len = 0;
     return eval_natural_with_len(seek, &len);
 }
 
-unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
-    unsigned long long val = 0;
+long long eval_natural_with_len(StringSeek *seek, int *len) {
+    long long val = 0;
     char temp;
     *len = 0;
-    if(seek->seek < 0) {
+    if (seek->seek < 0) {
         // エラー
     }
     if (!isdigit((unsigned char)getseek(seek))) {
@@ -257,15 +258,15 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     return val;
 }
 
-unsigned long long mypow(unsigned long long base, unsigned long long top) {
-    if(top == 0) {
+long long mypow(long long base, long long top) {
+    if (top == 0) {
         return 1;
     }
-    else if(top == 1) {
+    else if (top == 1) {
         return base;
     }
     else {
-        unsigned long long tmp = mypow(base, top / 2);
+        long long tmp = mypow(base, top / 2);
         return tmp * tmp * ((top % 2 == 1) ? base : 1);
     }
 }
