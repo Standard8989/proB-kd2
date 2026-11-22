@@ -13,7 +13,7 @@
 // String周り
 //
 
-const size_t STRING_BUFFER = 100;
+const int STRING_BUFFER = 100;
 
 // 末尾にNULL文字を含めない
 typedef struct String String;
@@ -21,7 +21,7 @@ typedef struct String String;
 // Stringを保持しない
 typedef struct StringSeek StringSeek;
 
-String construct_string(size_t size);
+String construct_string(int size);
 void free_string(String *string);
 String input_string();
 void output_string(FILE *stream, String string);
@@ -67,17 +67,17 @@ unsigned long long mypow(unsigned long long base, unsigned long long top);
 
 struct String {
     char *data;
-    size_t size;
-    size_t capacity;
+    int size;
+    int capacity;
 };
 
 struct StringSeek {
     char *data;
-    size_t size;
-    size_t seek;
+    int size;
+    int seek;
 };
 
-String construct_string(size_t size) {
+String construct_string(int size) {
     String string = {(char *)calloc(size, sizeof(char)), size, size};
 
     return string;
@@ -94,7 +94,7 @@ String input_string() {
     String string = {(char *)calloc(STRING_BUFFER, sizeof(char)), 0, STRING_BUFFER};
 
     int ch;
-    size_t i = 0;
+    int i = 0;
     while ((ch = getchar()) != '\n') {
         string.data[i++] = (char)ch;
         string.size++;
@@ -109,7 +109,7 @@ String input_string() {
 }
 
 void output_string(FILE *stream, String string) {
-    for (size_t i = 0; i < string.size; i++) {
+    for (int i = 0; i < string.size; i++) {
         fputc(string.data[i], stream);
     }
 }
@@ -130,18 +130,27 @@ long double bcalc(String string) {
 }
 
 long double eval_expression(StringSeek *seek) {
+    if(seek->seek < -1) {
+        // エラー
+    }
+    else if(seek->seek == -1) {
+        return 0;
+    }
     long double value = eval_term(seek);
 
-    if (seek->seek == seek->size) {
+    if(seek->seek < -1) {
+        // エラー
+    }
+    else if (seek->seek == -1) {
         return value;
     }
     else if (getseek(seek) == '+') {
-        seek->seek++;
-        return value + eval_expression(seek);
+        seek->seek--;
+        return eval_expression(seek) + value;
     }
     else if (getseek(seek) == '-') {
-        seek->seek++;
-        return value - eval_expression(seek);
+        seek->seek--;
+        return eval_expression(seek) - value;
     }
     else {
         return value;
@@ -150,41 +159,47 @@ long double eval_expression(StringSeek *seek) {
 
 long double eval_term(StringSeek *seek) {
     long double value = eval_factor(seek);
-    if (seek->seek == seek->size) {
+    if(seek->seek < -1) {
+        // エラー
+    }
+    if (seek->seek == -1) {
         return value;
     }
 
     switch (getseek(seek)) {
     case '^':
-        seek->seek++;
+        seek->seek--;
 
         long double next_value = eval_factor(seek);
-        return mypow(value, next_value);
+        return mypow(next_value, value);
 
     case '*':
-        seek->seek++;
+        seek->seek--;
 
-        return value * eval_term(seek);
+        return eval_term(seek) * value;
 
     case '/':
-        seek->seek++;
+        seek->seek--;
 
-        return value / eval_term(seek);
-
+        return eval_term(seek) / value;
     default:
         return value;
     }
 }
 
 long double eval_factor(StringSeek *seek) {
-    if (getseek(seek) == '(') {
-        seek->seek++;
+    if(seek->seek < 0) {
+        // エラー
+    }
+
+    if (getseek(seek) == ')') {
+        seek->seek--;
         long double value = eval_expression(seek);
 
-        if (getseek(seek) != ')') {
+        if (getseek(seek) != '(') {
             // エラー
         }
-        seek->seek++;
+        seek->seek--;
 
         return value;
     }
@@ -197,7 +212,7 @@ long double eval_factor(StringSeek *seek) {
 }
 
 long double eval_constant(StringSeek *seek) {
-    if (seek->seek == seek->size) {
+    if (seek->seek < 0) {
         // エラー
     }
 
@@ -225,6 +240,9 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     unsigned long long val = 0;
     char temp;
     *len = 0;
+    if(seek->seek < 0) {
+        // エラー
+    }
     if (!isdigit((unsigned char)getseek(seek))) {
         // エラー
     }
