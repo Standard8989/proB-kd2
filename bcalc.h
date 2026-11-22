@@ -57,6 +57,9 @@ long double eval_constant(StringSeek *seek);
 
 // 自然数を評価
 unsigned long long eval_natural(StringSeek *seek);
+unsigned long long eval_natural_with_len(StringSeek *seek, int *len);
+
+unsigned long long mypow(unsigned long long base, unsigned long long top);
 
 //
 // 実装
@@ -65,6 +68,7 @@ unsigned long long eval_natural(StringSeek *seek);
 struct String {
     char *data;
     size_t size;
+    size_t capacity;
 };
 
 struct StringSeek {
@@ -74,7 +78,7 @@ struct StringSeek {
 };
 
 String construct_string(size_t size) {
-    String string = {(char *)calloc(size, sizeof(char)), size};
+    String string = {(char *)calloc(size, sizeof(char)), size, size};
 
     return string;
 }
@@ -83,19 +87,21 @@ void free_string(String *string) {
     free(string->data);
     string->data = NULL;
     string->size = 0;
+    string->capacity = 0;
 }
 
 String input_string() {
-    String string = {(char *)calloc(STRING_BUFFER, sizeof(char)), STRING_BUFFER};
+    String string = {(char *)calloc(STRING_BUFFER, sizeof(char)), 0, STRING_BUFFER};
 
     int ch;
     size_t i = 0;
     while ((ch = getchar()) != '\n') {
         string.data[i++] = (char)ch;
+        string.size++;
 
-        if (i >= string.size) {
-            string.data = (char *)realloc(string.data, string.size * 2);
-            string.size *= 2;
+        if (i >= string.capacity) {
+            string.data = (char *)realloc(string.data, string.capacity * 2);
+            string.capacity *= 2;
         }
     }
 
@@ -135,13 +141,58 @@ long double eval_expression(StringSeek *seek) {
     }
     else if (getseek(seek) == '-') {
         seek->seek++;
-        return value + eval_expression(seek);
+        return value - eval_expression(seek);
+    }
+    else {
+        return value;
     }
 }
 
 long double eval_term(StringSeek *seek) {
+    long double value = eval_factor(seek);
+    if (seek->seek == seek->size) {
+        return value;
+    }
+
+    switch (getseek(seek)) {
+    case '^':
+        seek->seek++;
+
+        long double next_value = eval_factor(seek);
+        return mypow(value, next_value);
+
+    case '*':
+        seek->seek++;
+
+        return value * eval_term(seek);
+
+    case '/':
+        seek->seek++;
+
+        return value / eval_term(seek);
+
+    default:
+        return value;
+    }
+}
+
+long double eval_factor(StringSeek *seek) {
     if (getseek(seek) == '(') {
         seek->seek++;
+        long double value = eval_expression(seek);
+
+        if (getseek(seek) != ')') {
+            // エラー
+        }
+        seek->seek++;
+
+        return value;
+    }
+    else if (isdigit((unsigned char)getseek(seek))) {
+        return eval_constant(seek);
+    }
+    else {
+        // エラー
     }
 }
 
@@ -154,10 +205,9 @@ long double eval_constant(StringSeek *seek) {
     if (getseek(seek) == '.') {
         // 実数の場合
         seek->seek++;
-        long double decimal_part = (long double)eval_natural(seek);
-        while (decimal_part > 1) {
-            decimal_part /= 10;
-        }
+        int len;
+        long double decimal_part = (long double)eval_natural_with_len(seek, &len);
+        decimal_part /= 10 * len;
 
         return integer_part + decimal_part;
     }
@@ -169,6 +219,10 @@ long double eval_constant(StringSeek *seek) {
 unsigned long long eval_natural(StringSeek *seek) {
     unsigned long long val = 0;
     char temp;
+    if (!isdigit((unsigned char)getseek(seek))) {
+        // エラー
+    }
+
     while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
         val *= 10;
         val += temp - '0';
@@ -177,6 +231,35 @@ unsigned long long eval_natural(StringSeek *seek) {
     }
 
     return val;
+}
+
+unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
+    unsigned long long val = 0;
+    char temp;
+    *len = 0;
+    if (!isdigit((unsigned char)getseek(seek))) {
+        // エラー
+    }
+
+    while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
+        val *= 10;
+        val += temp - '0';
+
+        seek->seek++;
+        (*len)++;
+    }
+
+    return val;
+}
+
+unsigned long long mypow(unsigned long long base, unsigned long long top) {
+    if(top == 1) {
+        return base;
+    }
+    else {
+        unsigned long long tmp = mypow(base, top / 2);
+        return tmp * tmp * ((top % 2 == 1) ? base : 1);
+    }
 }
 
 #endif
