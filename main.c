@@ -339,12 +339,10 @@ void print_syntax_error(StringSeek *seek) {
     exit(1);
 }
 
-const long double KYOYO = 0.00001;
-
 int main(int argc, char **argv) {
     String string = input_string();
     long double value = bcalc(string);
-    
+
     printf("%Lf\n", value);
 
     free_string(&string);
