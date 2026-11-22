@@ -32,7 +32,7 @@ void print_syntax_error(StringSeek *seek);
 // bcalc部分
 //
 
-long double bcalc(String string);
+double bcalc(String string);
 
 // expression:  式
 // term:        項
@@ -41,26 +41,26 @@ long double bcalc(String string);
 
 // 式を評価する
 // 文法が正しくない場合はエラー出力しreturn
-long double eval_expression(StringSeek *seek);
+double eval_expression(StringSeek *seek);
 
 // 項を評価する
 // ex: 2^3, 2*0.45/5, (2+3*(2+3)), 3*(2+3)
 // +, -が含まれていた場合はエラー出力しreturn
-long double eval_term(StringSeek *seek);
+double eval_term(StringSeek *seek);
 
 // 式をカッコで囲んだ奴か定数を評価
-long double eval_factor(StringSeek *seek);
+double eval_factor(StringSeek *seek);
 
 // 定数を評価する
-long double eval_constant(StringSeek *seek);
+double eval_constant(StringSeek *seek);
 
 // 自然数を評価
 unsigned long long eval_natural(StringSeek *seek);
 unsigned long long eval_natural_with_len(StringSeek *seek, int *len);
 
-long double eval_power(StringSeek *seek);
+double eval_power(StringSeek *seek);
 
-long double mypow(long double base, unsigned long long top);
+double mypow(double base, unsigned long long top);
 
 //
 // 実装
@@ -125,9 +125,9 @@ char getseek(StringSeek *seek) {
     return seek->data[seek->seek];
 }
 
-long double bcalc(String string) {
+double bcalc(String string) {
     StringSeek string_seek = construct_string_seek(string);
-    long double value = eval_expression(&string_seek);
+    double value = eval_expression(&string_seek);
 
     if (string_seek.seek != string_seek.size) {
         print_syntax_error(&string_seek);
@@ -136,8 +136,8 @@ long double bcalc(String string) {
     return value;
 }
 
-long double eval_expression(StringSeek *seek) {
-    long double value = eval_term(seek);
+double eval_expression(StringSeek *seek) {
+    double value = eval_term(seek);
 
     while (true) {
         // チェック
@@ -152,7 +152,7 @@ long double eval_expression(StringSeek *seek) {
         }
         seek->seek++;
 
-        long double next = eval_term(seek);
+        double next = eval_term(seek);
 
         switch (op) {
         case '+':
@@ -171,8 +171,8 @@ long double eval_expression(StringSeek *seek) {
     return value;
 }
 
-long double eval_term(StringSeek *seek) {
-    long double value = eval_power(seek);
+double eval_term(StringSeek *seek) {
+    double value = eval_power(seek);
 
     while (true) {
         // チェック
@@ -188,7 +188,7 @@ long double eval_term(StringSeek *seek) {
         }
         seek->seek++;
 
-        long double next = eval_power(seek);
+        double next = eval_power(seek);
 
         switch (op) {
         case '*':
@@ -211,14 +211,14 @@ long double eval_term(StringSeek *seek) {
     return value;
 }
 
-long double eval_factor(StringSeek *seek) {
+double eval_factor(StringSeek *seek) {
     if (seek->seek == seek->size) {
         print_syntax_error(seek);
     }
 
     if (getseek(seek) == '(') {
         seek->seek++;
-        long double value = eval_expression(seek);
+        double value = eval_expression(seek);
 
         if (seek->seek == seek->size || getseek(seek) != ')') {
             print_syntax_error(seek);
@@ -235,7 +235,7 @@ long double eval_factor(StringSeek *seek) {
     }
 }
 
-long double eval_constant(StringSeek *seek) {
+double eval_constant(StringSeek *seek) {
     if (seek->seek == seek->size) {
         print_syntax_error(seek);
     }
@@ -253,13 +253,13 @@ long double eval_constant(StringSeek *seek) {
     if (getseek(seek) == '.') {
         // 実数の場合
         seek->seek++;
-        long double decimal_part = (long double)eval_natural_with_len(seek, &len);
+        double decimal_part = (double)eval_natural_with_len(seek, &len);
         decimal_part /= mypow(10, len);
 
         return integer_part + decimal_part;
     }
     else {
-        return (long double)integer_part;
+        return (double)integer_part;
     }
 }
 
@@ -287,8 +287,8 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
     return val;
 }
 
-long double eval_power(StringSeek *seek) {
-    long double value = eval_factor(seek);
+double eval_power(StringSeek *seek) {
+    double value = eval_factor(seek);
     if (seek->seek == seek->size) {
         return value;
     }
@@ -302,7 +302,7 @@ long double eval_power(StringSeek *seek) {
     }
 }
 
-long double mypow(long double base, unsigned long long top) {
+double mypow(double base, unsigned long long top) {
     if (top == 0) {
         return 1;
     }
@@ -310,7 +310,7 @@ long double mypow(long double base, unsigned long long top) {
         return base;
     }
     else {
-        long double tmp = mypow(base, top / 2);
+        double tmp = mypow(base, top / 2);
         return tmp * tmp * ((top % 2 == 1) ? base : 1);
     }
 }
@@ -341,7 +341,7 @@ void print_syntax_error(StringSeek *seek) {
 
 int main(int argc, char **argv) {
     String string = input_string();
-    long double value = bcalc(string);
+    double value = bcalc(string);
 
     printf("%Lf\n", value);
 
