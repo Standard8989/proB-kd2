@@ -344,13 +344,8 @@ const long double KYOYO = 0.00001;
 int main(int argc, char **argv) {
     String string = input_string();
     long double value = bcalc(string);
-
-    if (-KYOYO < (long)value - value && (long)value - value < KYOYO) {
-        printf("%ld\n", (long)value);
-    }
-    else {
-        printf("%Lf\n", value);
-    }
+    
+    printf("%Lf\n", value);
 
     free_string(&string);
 
