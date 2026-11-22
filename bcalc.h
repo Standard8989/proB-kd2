@@ -134,10 +134,16 @@ long double eval_expression(StringSeek *seek) {
 
     while (true) {
         // チェック
-
+        if(seek->seek == seek->size) {
+            break;
+        }
         char op = getseek(seek);
 
         // チェック
+        if (!(op == '+' || op == '-')) {
+            break;
+        }
+        seek->seek++;
 
         long double next = eval_term(seek);
 
@@ -163,20 +169,27 @@ long double eval_term(StringSeek *seek) {
 
     while (true) {
         // チェック
+        if(seek->seek == seek->size) {
+            break;
+        }
 
         char op = getseek(seek);
 
         // チェック
+        if (!(op == '*' || op == '/' || op == '^')) {
+            break;
+        }
+        seek->seek++;
 
         long double next = eval_factor(seek);
 
         switch (op) {
         case '*':
-            value += next;
+            value *= next;
             break;
 
         case '/':
-            value -= next;
+            value /= next;
             break;
 
         case '^':
