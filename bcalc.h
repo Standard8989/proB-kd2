@@ -130,7 +130,13 @@ char getseek(StringSeek *seek) {
 
 long double bcalc(String string) {
     StringSeek string_seek = construct_string_seek(string);
-    return eval_expression(&string_seek);
+    long double value = eval_expression(&string_seek);
+
+    if (string_seek.seek != string_seek.size) {
+        print_syntax_error(&string_seek);
+    }
+
+    return value;
 }
 
 long double eval_expression(StringSeek *seek) {
@@ -138,7 +144,7 @@ long double eval_expression(StringSeek *seek) {
 
     while (true) {
         // チェック
-        if(seek->seek == seek->size) {
+        if (seek->seek == seek->size) {
             break;
         }
         char op = getseek(seek);
@@ -173,7 +179,7 @@ long double eval_term(StringSeek *seek) {
 
     while (true) {
         // チェック
-        if(seek->seek == seek->size) {
+        if (seek->seek == seek->size) {
             break;
         }
 
@@ -193,6 +199,10 @@ long double eval_term(StringSeek *seek) {
             break;
 
         case '/':
+            if (next == 0) {
+                fprintf(stdout, "Zero division occurs.\n");
+                exit(1);
+            }
             value /= next;
             break;
 
@@ -205,7 +215,7 @@ long double eval_term(StringSeek *seek) {
 }
 
 long double eval_factor(StringSeek *seek) {
-    if(seek->seek == seek->size) {
+    if (seek->seek == seek->size) {
         print_syntax_error(seek);
     }
 
@@ -233,15 +243,19 @@ long double eval_constant(StringSeek *seek) {
         print_syntax_error(seek);
     }
 
-    unsigned long long integer_part = eval_natural(seek);
-    if(seek->seek == seek->size) {
+    int len;
+    StringSeek copy = *seek;
+    unsigned long long integer_part = eval_natural_with_len(seek, &len);
+    if(integer_part / (unsigned long long)mypow(10, len - 1) == 0) {
+        print_syntax_error(&copy);
+    }
+    if (seek->seek == seek->size) {
         return integer_part;
     }
 
     if (getseek(seek) == '.') {
         // 実数の場合
         seek->seek++;
-        int len;
         long double decimal_part = (long double)eval_natural_with_len(seek, &len);
         decimal_part /= mypow(10, len);
 
@@ -278,11 +292,11 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
 
 long double eval_power(StringSeek *seek) {
     long double value = eval_factor(seek);
-    if(seek->seek == seek->size) {
+    if (seek->seek == seek->size) {
         return value;
     }
 
-    if(getseek(seek) == '^') {
+    if (getseek(seek) == '^') {
         seek->seek++;
         return mypow(value, eval_factor(seek));
     }
@@ -292,7 +306,7 @@ long double eval_power(StringSeek *seek) {
 }
 
 long double mypow(long double base, unsigned long long top) {
-    if(top == 0) {
+    if (top == 0) {
         return 1;
     }
     else if (top == 1) {
