@@ -342,7 +342,8 @@ void print_syntax_error(StringSeek *seek) {
 const long double KYOYO = 0.00001;
 
 int main(int argc, char **argv) {
-    long double value = bcalc(input_string());
+    String string = input_string();
+    long double value = bcalc(string);
 
     if (-KYOYO < (long)value - value && (long)value - value < KYOYO) {
         printf("%ld\n", (long)value);
