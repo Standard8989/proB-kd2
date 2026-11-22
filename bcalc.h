@@ -8,12 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 //
 // String周り
 //
 
-const int STRING_BUFFER = 100;
+const int BUFFER_SIZE = 100;
 
 // 末尾にNULL文字を含めない
 typedef struct String String;
@@ -66,8 +67,8 @@ long double eval_constant(StringSeek *seek);
 long long eval_natural(StringSeek *seek);
 long long eval_natural_with_len(StringSeek *seek, int *len);
 
-// 階乗だけ別処理
-long double eval_pow(StringSeek *seek);
+// // 階乗だけ別処理
+// long double eval_pow(StringSeek *seek, long double top);
 
 long long mypow(long long base, long long top);
 
@@ -101,7 +102,7 @@ void destruct_string(String *string) {
 }
 
 String input_string() {
-    String string = {(char *)calloc(STRING_BUFFER, sizeof(char)), 0, STRING_BUFFER};
+    String string = {(char *)calloc(BUFFER_SIZE, sizeof(char)), 0, BUFFER_SIZE};
 
     int ch;
     int i = 0;
@@ -298,9 +299,27 @@ long long eval_natural_with_len(StringSeek *seek, int *len) {
     return val;
 }
 
-long double eval_pow(StringSeek *seek) {
-    
-}
+// long double eval_pow(StringSeek *seek, long double top) {
+//     ldVec vec = construct_ldVec(BUFFER_SIZE);
+//     pushback_ldVec(&vec, top);
+
+//     while(true) {
+//         if(getseek(seek) != '^') {
+//             break;
+//         }
+//         seek->seek--;
+        
+//         top = eval_factor(seek);
+//         pushback_ldVec(&vec, top);
+//     }
+
+//     top = 1;
+//     for(int i = 0; i < vec.size; i++) {
+//         top = mypow(vec.data[i], top);
+//     }
+
+//     return top;
+// }
 
 long long mypow(long long base, long long top) {
     if (top == 0) {
