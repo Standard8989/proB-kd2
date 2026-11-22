@@ -115,7 +115,7 @@ void output_string(FILE *stream, String string) {
 }
 
 StringSeek construct_string_seek(String string) {
-    StringSeek string_seek = {string.data, string.size, 0};
+    StringSeek string_seek = {string.data, string.size, string.size - 1};
 
     return string_seek;
 }
@@ -201,36 +201,24 @@ long double eval_constant(StringSeek *seek) {
         // エラー
     }
 
-    unsigned long long integer_part = eval_natural(seek);
+    int len;
+    long double decimal_part = (long double)eval_natural_with_len(seek, &len);
     if (getseek(seek) == '.') {
         // 実数の場合
-        seek->seek++;
-        int len;
-        long double decimal_part = (long double)eval_natural_with_len(seek, &len);
-        decimal_part /= 10 * len;
+        seek->seek--;
+        long double integer_part = (long double)eval_natural(seek);
+        decimal_part /= mypow(10, len);
 
         return integer_part + decimal_part;
     }
     else {
-        return (long double)integer_part;
+        return decimal_part;
     }
 }
 
 unsigned long long eval_natural(StringSeek *seek) {
-    unsigned long long val = 0;
-    char temp;
-    if (!isdigit((unsigned char)getseek(seek))) {
-        // エラー
-    }
-
-    while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
-        val *= 10;
-        val += temp - '0';
-
-        seek->seek++;
-    }
-
-    return val;
+    int len = 0;
+    return eval_natural_with_len(seek, &len);
 }
 
 unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
@@ -241,11 +229,10 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
         // エラー
     }
 
-    while (seek->seek < seek->size && isdigit((unsigned char)(temp = getseek(seek)))) {
-        val *= 10;
-        val += temp - '0';
+    while (seek->seek >= 0 && isdigit((unsigned char)(temp = getseek(seek)))) {
+        val += (temp - '0') * mypow(10, *len);
 
-        seek->seek++;
+        seek->seek--;
         (*len)++;
     }
 
@@ -253,7 +240,10 @@ unsigned long long eval_natural_with_len(StringSeek *seek, int *len) {
 }
 
 unsigned long long mypow(unsigned long long base, unsigned long long top) {
-    if(top == 1) {
+    if(top == 0) {
+        return 1;
+    }
+    else if(top == 1) {
         return base;
     }
     else {
